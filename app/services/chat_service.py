@@ -35,9 +35,7 @@ from app.services.realtime_service import RealtimeGroqService
 logger = logging.getLogger("J.A.R.V.I.S")
 
 
-# ============================================================================
 # CHAT SERVICE CLASS
-# ============================================================================
 
 class ChatService:
     """
