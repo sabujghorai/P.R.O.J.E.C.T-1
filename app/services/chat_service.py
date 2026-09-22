@@ -129,3 +129,30 @@ class ChatService:
             return session_id
 
         # New session with this ID(e.g client sent an Id that was never saved)
+        self.sessions[session_id] = []
+        return session_id
+
+
+    # MESSAGES AND HISTORY FORMATTING
+
+
+    def add_message(self, session_id: str, role: str, content: str):
+        """Append one message (user or assistant) to the session's message list. Creates session if missing."""
+        if session_id not in self.sessions:
+            self.sessions[session_id] = []
+        self.sessions[session_id].append(ChatMessage(role=role, content=content))
+
+    def get_chat_history(self, session_id: str) -> List[ChatMessage]:
+        """Return th list of messages for this session (chronological). Empty list if session unknows."""
+        return self.sessions.get(session_id, [])
+
+    def format_history_for_llm(self, session_id: str, exclude_last: bool = False) -> List[tuple]:
+        """
+          Build a list of (user_text, assistant_text) pairs for the LLM prompt.
+
+          We only include complete pairs and can at MAX_CHAT_HISTORY_TURNS (e,g 20)
+          sp the prompt does not grow unboundes. If exclude_last is True we drop the
+          last message (the current user message that we are about to replay to).
+        """
+        messages = self.get_chat_history(session_id)
+        history = []
