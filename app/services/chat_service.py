@@ -49,3 +49,83 @@ class ChatService:
         """ Store references to the groq and Realtime services; keep session in memory."""
         self.groq_services = groq_service
         self.realtime_services = realtime_service
+        # Map: session_id -> list chatmessage (user and assistant messages in order).
+        self.sessions: Dict[str, list[ChatMessage]] = {}
+
+
+    # session load/validate/get-or-create
+
+
+
+
+    def load_session_from_disk(self,session_id: str) -> bool:
+        """
+        Load a session from database/vhats_data/ if a file for this session_id exists.
+        File name is chat_{safe_session_id}. json where safr_session_id has dashes/spaces removed.
+        On success we put the messages into self.sessions[session_id] so later request use them.
+        Returns True if loaded, False if file missing or unreadable.
+        """
+
+        # Sanitize ID for use un filename (no dashes or spaces ).
+        safe_session_id = session_id.replace("_", "").replace(" ", "_")
+        filename = f"chat_{safe_session_id}.json"
+        filepath = CHATS_DATA_DIR / filename
+
+        if not filepath.exists():
+            return False
+
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                chat_dict = json.load(f)
+            # converts stored dicts back to chatmessages objects.
+            messages = [
+                ChatMessage(role=msg.get("role"),content=msg.get("content"))
+                for msg in chat_dict.get("messages",[])                
+            ]
+            self.sessions[session_id] = messages
+            return True
+        except Exception as e:
+            logger.warning("Failed to load session %s from disk: %s", session_id, e)
+            return False
+
+    def validate_session_id(self, session_id: str) -> bool:
+        """
+        Return True is session_id is safr to use (non-empty no path traversal, length <= 255).
+        Used to reject malicious or invalid IDs before we use them if file paths.
+        """
+        if not session_id or not session_id.strip():
+            return False
+        # Block path travarsal and path separators .
+        if ".." in session_id or "/" in session_id or "\\" in session_id:
+            return False
+        if len(session_id) > 255:
+            return False
+        return True
+    def get_or_create_session(self, session_id: Optional[str] = None) -> str:
+        """
+        
+        Return a session ID and ensute that session exists in. memory.
+
+        - If session_id is None: create a new session with a new UUID and return it.
+        - If session_id id provided: validate it; if it's in self.session return it;
+          else try to load from disk; if not found, create a new session with that ID.
+          Raises ValueErrors if session_id is invalid (empty, path traversal, or too long).
+        """
+        if not session_id:
+            new_session_id = str(uuid.uuid4())
+            self.sessions[new_session_id] = []
+            return new_session_id
+
+        if not self.validate_session_id(session_id):
+            raise ValueError(
+                f"Invalid session_id format: {session_id}. Session ID must be non-empty, "
+                "not contain path traversal characters, and be under 255 characters."
+            )
+
+        if session_id in self.sessions:
+            return session_id
+
+        if self.load_session_from_disk(session_id):
+            return session_id
+
+        # New session with this ID(e.g client sent an Id that was never saved)
