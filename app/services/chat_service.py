@@ -156,3 +156,8 @@ class ChatService:
         """
         messages = self.get_chat_history(session_id)
         history = []
+        # If exclude_last, we skip the message (the current user message we are about to reply to).
+        messages_to_process = messages[:-1] if exclude_last and messages else messages
+        i = 0
+        while i < len(messages_to_process) - 1:
+            user_msg = messages_to_process[i]
