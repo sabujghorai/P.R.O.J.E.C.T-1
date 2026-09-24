@@ -161,3 +161,24 @@ class ChatService:
         i = 0
         while i < len(messages_to_process) - 1:
             user_msg = messages_to_process[i]
+            ai_msg = messages_to_process[i + 1]
+            if user_msg.role == "user" and ai_msg.role == "assistant":
+                history.append((user_msg.content, ai_msg.content))
+                i += 2
+            else:
+                i += 1
+        # Keep only the most recent turns so the prompt does not exceed tokens limits.
+        if len(history) > MAX_CHAT_HISTORY_TURNS:
+            history = history[-MAX_CHAT_HISTORY_TURNS:]
+        return history
+
+
+# Process messages (general and realtime)
+
+
+def process_message(self, session_id: str, user_message: str) -> str:
+    """
+    Handle one general-chat message: add user message, call Groq ( no web search), and replay, return it.
+    """
+    self.add_message(session_id, "user", user_message)
+    
