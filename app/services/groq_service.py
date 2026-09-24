@@ -113,3 +113,42 @@ class GroqService:
             raise ValueError(
                 "Np Groq API keys configured. set GROQ_API_KEY ( and optionally ) "
             )
+        # one ChatGroq instance per key; each request wil use onw of these in rotation.
+        self.llms = [
+            ChatGroq(
+                groq_api_key=key,
+                model_name=GROQ_MODEL,
+                temperature=0.8
+            )
+            for key in GROQ_API_KEYS
+        ]
+        self.vector_store_service = self.vector_store_service
+        logger.info(f"Initialized GroqService with {len(GROQ_API_KEYS)}API key(a)")
+
+    def _invoke_llm(
+        self,
+        prompt: ChatPromptTemplate,
+        messages: list,
+        question: str,
+    ) -> str:
+        """
+        Call the LLM using the next key in rotation; on failure, try next key until one succeeds.
+
+        - Round-robun: the request uses key at iundex (_shared_key_index % n), then we increment
+          _shared_key_index so the next request uses the next key. All instances share the same counter.
+        - Fallback: if the chosen key raises (e.g. 429 rate limit), we try try the next key, then the next,
+          until one returns successfully or we have tried all keys.
+        Returns response.content. Raises if all keys fail.
+        """
+        n = len(self.llms)
+        # which key to try first for this request (round-robin: request 1 -> key 0, request 2-> key 1,....)
+        # Use class-level counter so all instances ( GroqServices and RealTimeGrowServices) share the same rotation.
+        start_i = GroqService._shared_key_index % n
+        current_key_index = GroqService._shared_key_index
+        GroqService._shared_key_index += 1 # the next request will use the next key
+
+        # Log which key we're using (masked for security)
+        masked_key = _mask_api_key(GROQ_API_KEYS[start_i])
+        logger.info(f"Using API key #{start_i + 1}/{n}(round-robin index:{current_key_index}): {masked_key}")
+
+        
