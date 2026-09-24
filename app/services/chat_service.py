@@ -181,3 +181,4 @@ def process_message(self, session_id: str, user_message: str) -> str:
     Handle one general-chat message: add user message, call Groq ( no web search), and replay, return it.
     """
     self.add_message(session_id, "user", user_message)
+    chat_history = self.format_history_for_llm(session_id, exclude_last = True)
