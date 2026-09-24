@@ -182,3 +182,4 @@ def process_message(self, session_id: str, user_message: str) -> str:
     """
     self.add_message(session_id, "user", user_message)
     chat_history = self.format_history_for_llm(session_id, exclude_last = True)
+    
