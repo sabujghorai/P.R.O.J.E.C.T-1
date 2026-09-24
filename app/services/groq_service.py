@@ -151,4 +151,6 @@ class GroqService:
         masked_key = _mask_api_key(GROQ_API_KEYS[start_i])
         logger.info(f"Using API key #{start_i + 1}/{n}(round-robin index:{current_key_index}): {masked_key}")
 
-        
+        last_exe = None
+        keys_tried = []
+        # try each key in order starting from start_i ( wrap aropund with % n).
