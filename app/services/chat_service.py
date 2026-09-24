@@ -216,3 +216,15 @@ def save_chat_session(self, session_id: str):
 
     messages = self.sessions[session_id]
     safe_session_id = session_id.replace("_","").replace(" ", "_")
+    filename = f"chat_{safe_session_id}.json"
+    filepath = CHATS_DATA_DIR / filename
+    chat_dict = {
+        "session_id": session_id,
+        "messages": [{"role":msg.role, "content":msg.content} for msg in messages]
+    }
+
+    try:
+        with open(filepath,"w", encoding="utf-8") as f:
+            json.dump(chat_dict, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        logger.error("Failed to save chat session %s to disk: %s", session_id,e)
