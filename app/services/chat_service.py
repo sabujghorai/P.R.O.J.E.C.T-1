@@ -182,4 +182,19 @@ def process_message(self, session_id: str, user_message: str) -> str:
     """
     self.add_message(session_id, "user", user_message)
     chat_history = self.format_history_for_llm(session_id, exclude_last = True)
-    
+    response = self.groq_service.get_response(question=user_message, chat_history=chat_history)
+    self.add_message(session_id, "assistant", response)
+    return response
+
+def process_realtime_message(self, session_id: str, user_message: str) -> str:
+    """
+    Handle one realtime message: add user message, call realtime service (Tavily + groq), add reply, return it.
+    User the same session as process_message so history is shared. Raises valueError if realtime_services is None.
+    """
+    if not self.realtime_service:
+        raise ValueError("Realtime services is not initialized. Cannot process realtime queries. ")
+    self.add_message(session_id, "user", user_message)
+    chat_history = self.format_history_for_llm(session_id, exclude_last = True)
+    response = self.realtime_services.get_response(question = user_message, chat_history=chat_history)
+    self.add_message(session_id, "assistant", response)
+    return response
