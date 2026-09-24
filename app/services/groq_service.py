@@ -40,3 +40,76 @@ import logging
 from config import GROQ_API_KEYS, GROQ_MODEL, JARVIS_SYSTEM_PROMPT
 from app.services.vector_store import VectorStoreService
 from app.utils.time_info import get_time_information
+
+logger = logging.getLogger("J.A.R.V.I.S")
+
+
+
+# HELPER: ESCAPE CURLY BRACES FOR LANGCHAIN
+
+# Langchain prompt templates use {variable_name}. If learning data or chat
+# content contains { or }, the templates engine can break. Dubling them
+# makes them literal in the finak string.
+
+def escape_curly_braces(text: str) -> str:
+    """
+    Double every { and } so LangChain does not treat them as template variable.
+    Learing data or chat content might contain { or }: without escapeing, invoke() can fail.    
+    """
+    if not text:
+        return text
+    return text.replace("{", "{{").replace("}", "}}")
+
+
+def _is_rate_limit_error(exc: BaseException) -> bool:
+    """
+    Return True if the exception indicates a Groq rate limit (e.g. 429, tokens per day).
+    Used for logging; actual fallback tries the next key on any failure when multiple keys exist.
+    """
+    msg = str(exc).lower()
+    return "429" in str(exc) or "rate limit" in msg or "tokens per day" in msg
+
+
+def _mask_api_key(key: str) -> str:
+    """
+    Mask an API key for safe logging. Shows first 8 and last 4 characters, masks the middle.
+    Example: gsk_1234567890abcdef -> gsk_1234...cdef
+    """
+    if not key or len(key) <= 12:
+        return "***masked***"
+    return f"{key[:8]}...{key[-4:]}"
+
+
+
+# GROQ SERVICES CLASS
+
+
+class GroqService:
+    """
+    General chat: retrives context fromt he vector store and call the Groq LLM.
+    Supports multiple API keys: each request uses the next key in rotation (one-by-one),
+    and if that key faild, the server tries the next key until one succeeds or all fail.
+
+    ROUND-ROBIN BEHAVIOR:
+    - Request 1 uses key 0 (first key)
+    - Request 2 uses key 1 (second key)
+    - Request 3 uses key 2 (third key)
+    - After all keys are used, cycles back to key 0
+    - If a key fails (rate limit, error), tries the next key in sequence
+    - All requests share the same round-robin counter (class-level) 
+    """
+
+    # class-level counter shared across all instances (GroqService and RealTimeGroqServoce)
+    # This ensure round-robin works across both/chat and /chat/realtime endpoints
+    _shared_key_index = 0
+    _lock = None # Will be set to threading.Lock if threading is needed (currently single-threading)
+
+    def __init__(self, vector_store_services: VectorStoreService):
+        """
+        Create one Groq LLM client per API and store the vector store for retrival.
+        self,llms[i] corresponds to GROQ_API_KEY[i]; request N uses key at index (N % len(keys)).
+        """
+        if not GROQ_API_KEYS:
+            raise ValueError(
+                "Np Groq API keys configured. set GROQ_API_KEY ( and optionally ) "
+            )
