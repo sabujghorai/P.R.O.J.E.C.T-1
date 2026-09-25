@@ -154,3 +154,46 @@ class GroqService:
         last_exe = None
         keys_tried = []
         # try each key in order starting from start_i ( wrap aropund with % n).
+        for j in range(n):
+            i = (start_i + j) % n
+            keys_tried.append(i)
+            try:
+                # Build chain with this key's LLM and invoke once.
+                chain = prompt | self.llms[i]
+                response = chain.invoke({"history": messages, "question": question})
+                # log success if  we had to fallback to a different key
+                if j > 0:
+                    masked_success_key = _mask_api_key(GROQ_API_KEYS[i])
+                    logger.info(f"Fallback successful: API key #{i + 1}/{n} succeeded: {masked_success_key}")
+                return response.content
+            except Exception as e:
+                last_exe = e
+                masked_failed_key = _mask_api_key(GROQ_API_KEYS[i])
+                if _is_rate_limit_error(e):
+                    logger.warning(f"API key #{i+1}/{n} rate limited: {masked_failed_key}")
+                else:
+                    logger.warning(f"API key #{i+1}/{n} failed: {masked_failed_key} - {str(e)[:100]} ")
+                # If we have more than one key, try the next one; otherwise raise immediately.
+                if n > 1:
+                    continue
+                raise Exception(f"Error getting responses from Grow: {str(e)}") from e
+        # All keys were tried and all failed; raise the last exception.
+        masked_all_keys = ", ".join([_mask_api_key(GROQ_API_KEYS[i]) for i in keys_tried])
+        logger.error(f"All API failed. Tried keys: {masked_all_keys}")
+        raise Exception(f"Error getting responses from Groq: {str(last_exe)}") from last_exe  
+
+    def get_response(
+        self,
+        question: str,
+        chat_history: Optional[List[tuple]] = None
+    ) -> str:
+        """
+        Return the assistant's reply for this question (general chat, no web search).
+        Retrieves context from the vector store, builds the prompt, then calls _invoke_llm 
+        which uses the next API key in rotation and falls back to other keys on failure.
+        """
+        try:
+            # Get relevant chunks fro learning data and past chats (bounded token usage).
+            # If retrival faild (e.g. vector store not ready), use empty context so the LLM still answers.
+            context = ""
+            
