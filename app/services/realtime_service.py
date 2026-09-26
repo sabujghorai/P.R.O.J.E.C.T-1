@@ -113,3 +113,4 @@ class RealtimeGroqService(GroqService):
             # The AI will still respond using its knowledge, just with real-time date
             logger.error(f"Error performing Tavily search: {e}")
             return ""
+        
