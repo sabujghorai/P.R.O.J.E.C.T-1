@@ -210,3 +210,19 @@ class GroqService:
                 system_message += f"\n\nRelevant context from your learning data and past conversation:\n{escape_curly_braces(context)}"
 
             # prompt template: system message, chat history placeholder, current question.
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", system_message),
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{question}"),
+            ])
+            # Convert (user, assistant) pairs to Langchain message objects.
+            message = []
+            if chat_history:
+                for human_msg, ai_msg in chat_history:
+                    message.append(HumanMessage(content=human_msg))
+                    message.append(AIMessage(content=ai_msg))
+
+            # Use next key in rotation; on failure, try remaining keys ( same as realtime).
+            return self._invoke_llm(prompt, message, question)
+        except Exception as e:
+            raise Exception(f"Error getting response from Groq: {str(e)}") from e
