@@ -196,4 +196,17 @@ class GroqService:
             # Get relevant chunks fro learning data and past chats (bounded token usage).
             # If retrival faild (e.g. vector store not ready), use empty context so the LLM still answers.
             context = ""
-            
+            try:
+                retriever = self.vector_store_service.get_retriever(k=10)
+                context_docs = retriever.invoke(question)
+                context = "\n".join([doc.page_content for doc in context_docs]) if context_docs else ""
+            except Exception as retrieval_err:
+                logger.warning("Vector store retrieval failed, using empty context: %s", retrieval_err)
+
+            # Build system message: personality + current time + retrieved context.
+            time_info = get_time_information()
+            system_message = JARVIS_SYSTEM_PROMPT + f"\n\nCurrent time and date: {time_info}"
+            if context:
+                system_message += f"\n\nRelevant context from your learning data and past conversation:\n{escape_curly_braces(context)}"
+
+            # prompt template: system message, chat history placeholder, current question.
