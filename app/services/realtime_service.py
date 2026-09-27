@@ -7,7 +7,7 @@ ChatService for POST /chat/realtime. Same session and history as general chat;
 the only difference is we run a Tvily serch for the user's question and add
 the results to the system message, then call Groq.
 
-ROUND-ROBIN API KEYS:
+ROUND-ROBIN API KEYS:u
   - Shares the same round-robi counter as GroqSearvice (class-level _shared_key_index)
   - This means /chat and /chat/realtime request use the same rotation sequence
   - Example: If /chat uses key 1, the next /chat/realtime request will use key 2
