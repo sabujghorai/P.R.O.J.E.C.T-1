@@ -58,5 +58,14 @@ class VectorStoreService:
             model_kwargs={"devide": "cpu"},
         )
         self.text_splitter = RecursiveCharacterTextSplitter(
-            
+            chunk_size=CHUNK_SIZE,
+            chunk_overlap=CHUNK_OVERLAP,
         )
+        self.vector_store: Optional[FAISS] = None
+
+
+        # Load document from disk
+
+
+        def load_learning_data(self) -> List[Document]:
+            """Read all .txt files in database/learning_data/ and return one Document per file (content + source name)."""
