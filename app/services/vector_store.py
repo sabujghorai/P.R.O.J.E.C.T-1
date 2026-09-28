@@ -17,4 +17,5 @@ LIFECYCLE:
 Embeddings run locally (sentence-transforms); no extra API key. Groq and Realtime services
 call get_retriever
 
+
 """
