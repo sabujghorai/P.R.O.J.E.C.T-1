@@ -15,6 +15,36 @@ LIFECYCLE:
   -save_vector_store(): Write the current FAISS index to database/vector_store/ (called after create).
 
 Embeddings run locally (sentence-transforms); no extra API key. Groq and Realtime services
-call get_retriever
-
+call get_retriever() for every request to get context.
 """
+
+import json
+import logging
+from pathlib import Path
+from typing import List, Optional
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstore import FAISS
+from langchain_core.documents import Document
+
+from config import (
+    LEARNING_DATA_DIR,
+    CHATS_DATA_DIR,
+    VECTOR_STORE_DIR,
+    EMBEDDING_MODEL,
+    CHUNK_SIZE,
+    CHUNK_OVERLAP,
+)
+
+
+logger = logging.getLogger("J.A.R.V.I.S")
+
+
+
+# VECTOR STORE SERVICE CLASS
+
+
+class VectorStoreService:
+    """
+    Builds a FAISS index from learning_data .txt files and chats_data
+    """
