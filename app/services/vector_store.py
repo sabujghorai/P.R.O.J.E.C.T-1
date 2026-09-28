@@ -46,5 +46,17 @@ logger = logging.getLogger("J.A.R.V.I.S")
 
 class VectorStoreService:
     """
-    Builds a FAISS index from learning_data .txt files and chats_data
+    Builds a FAISS index from learning_data .txt files and chats_data .json files,
+    and provides a retriever to fetch the k most relevant chunks for query.
     """
+
+    def __init__(self):
+        """Create the embedding model (local) and text splitter; vector_store is set in create_vector_store()."""
+        # Embeddings run locally (no API key); used to convert text into vectors for similarity search.
+        self.embedding = HuggingFaceEmbeddings(
+            Model_name=EMBEDDING_MODEL,
+            model_kwargs={"devide": "cpu"},
+        )
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            
+        )
