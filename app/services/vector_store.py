@@ -69,3 +69,14 @@ class VectorStoreService:
 
         def load_learning_data(self) -> List[Document]:
             """Read all .txt files in database/learning_data/ and return one Document per file (content + source name)."""
+            document =[]
+            for file_path in list(LEARNING_DATA_DIR.glob("*.txt")):
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        content = f.read().strip
+                        if content:
+                            document.append(Document(page_content=content, metadata={"source": str(file_path.name)}))
+                except Exception as e:
+                    logger.warning("Could no load learning data file %s: %s", file_path, e)
+            return document
+              
