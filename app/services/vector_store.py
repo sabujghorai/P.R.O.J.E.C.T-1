@@ -99,3 +99,12 @@ class VectorStoreService:
                 except Exception as e:
                     logger.warning("Could not load chat history file %s: %s", file_path, e)
             return documents
+
+
+    # BUILD AND SAVE FAISS INDEX
+
+
+    def create_vector_store(self) -> FAISS:
+        """
+        Load learning_data + chats_data, chunks, embed, build FAISS index save 
+        """
