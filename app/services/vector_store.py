@@ -106,5 +106,8 @@ class VectorStoreService:
 
     def create_vector_store(self) -> FAISS:
         """
-        Load learning_data + chats_data, chunks, embed, build FAISS index save 
+        Load learning_data + chats_data, chunks, embed, build FAISS index save, save to disk.
+        Called once at startup. If there are no documents we created a tiny placeholder index.
         """
+        learning_docs = self.load_learning_data()
+        
