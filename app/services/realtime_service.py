@@ -155,7 +155,7 @@ class RealtimeGroqService(GroqService):
             if chat_history:
                 for human_msg, ai_msg in chat_history:
                     message.append(HumanMessage(content=human_msg))
-                message.append(AIMessage(content=ai_msg))
+                    message.append(AIMessage(content=ai_msg))
 
                 # Uses same round-robin and fall back as general chat: next key one-by-one, try next on failure.
                 response_content = self._invoke_llm(prompt, message, question)
