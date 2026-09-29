@@ -82,11 +82,20 @@ class VectorStoreService:
         
         def load_chat_history(self) -> List[Document]:
             """Load all .json files in database/chats_data/; turn each into one Document (User:/Assistant: lines.)"""
-            document = []
+            documents = []
             for file_path in list(CHATS_DATA_DIR.glob("*.json")):
                 try:
                     with open(file_path, "r", encoding="utf-8") as f:
                         chat_data = json.load(f)
                     messages = chat_data.get("messages", [])
                     # Format as "user:..." / "Assistant: ..." so the retriever can match past conversations.
-                    
+                    chat_content = "\n".join([
+                        f"User: {msg.get( 'content', '')}" if msg.get('role') == 'user'
+                        else f"Assistant: {msg.get('content', '')}"
+                        for msg in messages
+                    ])
+                    if chat_content.strip():
+                        documents.append(Document(page_content=chat_content, metadata={"source": f"chat_{file_path.stem}"}))
+                except Exception as e:
+                    logger.warning("Could not load chat history file %s: %s", file_path, e)
+            return documents
