@@ -110,4 +110,3 @@ class VectorStoreService:
         Called once at startup. If there are no documents we created a tiny placeholder index.
         """
         learning_docs = self.load_learning_data()
-        
