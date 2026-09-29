@@ -79,4 +79,14 @@ class VectorStoreService:
                 except Exception as e:
                     logger.warning("Could no load learning data file %s: %s", file_path, e)
             return document
-              
+        
+        def load_chat_history(self) -> List[Document]:
+            """Load all .json files in database/chats_data/; turn each into one Document (User:/Assistant: lines.)"""
+            document = []
+            for file_path in list(CHATS_DATA_DIR.glob("*.json")):
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        chat_data = json.load(f)
+                    messages = chat_data.get("messages", [])
+                    # Format as "user:..." / "Assistant: ..." so the retriever can match past conversations.
+                    
