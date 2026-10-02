@@ -110,4 +110,14 @@ class VectorStoreService:
         Called once at startup. If there are no documents we created a tiny placeholder index.
         """
         learning_docs = self.load_learning_data()
+        chat_docs = self.load_chat_history()
+        all_documentds = learning_docs + chat_docs
+
+        if not all_documentds:
+            # placeholder so get_retriever() never fails; returns this single chunks for any query
+            self.vector_store = FAISS.from_texts(["No data available yet"],self.embedding)
+        else:
+            chunks = self.text_splitter.split_documents(all_documentds)
+            self.vector_store = FAISS.from_documents(chunks, self.embedding)
+
         
