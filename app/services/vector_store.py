@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import List, Optional
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstore import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 
 from config import (
@@ -120,4 +120,23 @@ class VectorStoreService:
             chunks = self.text_splitter.split_documents(all_documentds)
             self.vector_store = FAISS.from_documents(chunks, self.embedding)
 
-        
+        self.save_vector_store()
+        return self.vector_store
+
+    def save_vector_store(self):
+        """Write the current FAISS index to database/vector_store/. On error we only log."""
+        if self.vector_store:
+            try:
+                self.vector_store.save_local(str(VECTOR_STORE_DIR))
+            except Exception as e:
+                logger.error("Failder to save vector store to disk: %s", e)
+
+
+    # RETRIEVER FOR CONTEXT
+
+
+    def get_retriever(self, k: int = 10):
+        """Return a retriever that return the k most similar chunks for a query srting."""
+        if not self.vector_store:
+            raise RuntimeError("Vector store not initialized. This should not happen.")
+        return self.vector_store.as_retriever(search_kwargs={"k": k})
