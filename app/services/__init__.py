@@ -9,4 +9,5 @@ MODULES:
   chat_service      - Sessions (get/create, load from disk), message list, format history for LLM, save to disk.
   grow_services     - General chat: retrieve context from vector store, build prompt, call Groq LLM.
   realtime_service  - Realtime chat: Tavily search first, then same as groq (inherits GroqServices).
+  vector_store.     - Load learning_data + chats_data, chunks, embed, FAISS index; provide retriever for context.
 """
