@@ -57,9 +57,9 @@ from config import VECTOR_STORE_DIR
 from langchain_community.vectorstores import FAISS
 
 
-# ----------------------------------------------------------------
+
 # LOGGING
-# ----------------------------------------------------------------
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)-8s | %(name)-20s | %(message)s",
