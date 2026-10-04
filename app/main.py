@@ -275,7 +275,6 @@ _TTS_BUFFER_TIMEOUT = 2.0
 _TTS_BUFFER_MIN_WORDS = 4
 _ABBREV_HOLD_RE = re.compile(r"^(?:Dr|Mr|Mrs|Ms|Prof|Sr|Jr|St|Vs|Etc)\.$", re.IGNORECASE)
 
-
 def _should_hold_sentence_for_continuation(sent: str) -> bool:
 
     t = sent.strip()
@@ -289,7 +288,6 @@ def _should_hold_sentence_for_continuation(sent: str) -> bool:
         return False
 
     return bool(_ABBREV_HOLD_RE.match(words[0]))
-
 
 def _split_sentences(buf: str):
     parts = _SPLIT_RE.split(buf)
