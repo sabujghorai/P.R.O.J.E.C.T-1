@@ -96,3 +96,103 @@ async def lifespan(app: FastAPI):
     logger.info("[CONFIG] Embedding model: %s", EMBEDDING_MODEL)
     logger.info("[CONFIG] Chunk size: %d | Overlap: %d | Max history turns: %d",
                 CHUNK_SIZE, CHUNK_OVERLAP, MAX_CHAT_HISTORY_TURNS)
+
+    try:
+        
+        logger.info("Initializing vector store service...")
+        t0 = time.perf_counter()
+        vector_store_service = VectorStoreService()
+        vector_store_service.create_vector_store()
+        logger.info("[TIMING] startup_vector_store: %.3fs", time.perf_counter() - t0)
+        logger.info("Initializing Groq service (general queries)...")
+        groq_service = GroqService(vector_store_service)
+        logger.info("Groq service initialized successfully")
+        logger.info("Initializing Realtime Groq service (with Tavily search)...")
+        realtime_service = RealtimeGroqService(vector_store_service)
+        logger.info("Realtime Groq service initialized successfully")
+        logger.info("Initializing Brain service (Groq query classification)...")
+        brain_service = BrainService(groq_service=groq_service)
+        logger.info("Brain service initialized successfully")
+        logger.info("Initializing Task executor...")
+        task_executor = TaskExecutor(groq_service=groq_service)
+        logger.info("Task executor initialized successfully")
+        logger.info("Initializing Background task manager...")
+        task_manager = TaskManager(task_executor=task_executor)
+        logger.info("Background task manager initialized successfully")
+        logger.info("Initializing Vision service (Groq)...")
+        vision_service = VisionService()
+        logger.info("Vision service initialized successfully")
+        logger.info("Initializing chat service...")
+
+        chat_service = ChatService(
+            groq_service, realtime_service, brain_service,
+            task_executor=task_executor,
+            vision_service=vision_service,
+            task_manager=task_manager,
+        )
+
+        logger.info("Chat service initialized successfully")
+        logger.info("=" * 60)
+        logger.info("Service Status:")
+        logger.info("  - Vector Store: Ready")
+        logger.info("  - Groq AI (General): Ready")
+        logger.info("  - Groq AI (Realtime): Ready")
+        logger.info("  - Brain (Unified Decision): Ready")
+        logger.info("  - Task Executor: Ready")
+        logger.info("  - Background Task Manager: Ready")
+        logger.info("  - Vision (Groq): Ready")
+        logger.info("  - Chat Service: Ready")
+        logger.info("=" * 60)
+        logger.info("J.A.R.V.I.S is online and ready!")
+        logger.info("API: http://localhost:8000")
+        logger.info("Frontend: http://localhost:8000/app/ (open in browser)")
+        logger.info("=" * 60)
+
+        yield
+
+        logger.info("\nShutting down J.A.R.V.I.S...")
+        _tts_pool.shutdown(wait=True)
+
+        if task_manager:
+            task_manager.shutdown()
+
+        if chat_service:
+            for session_id in list(chat_service.sessions.keys()):
+                chat_service.save_chat_session(session_id)
+
+        logger.info("All sessions saved. Goodbye!")
+
+    except Exception as e:
+        logger.error(f"Fatal error during startup: {e}", exc_info=True)
+        raise
+
+
+app = FastAPI(
+    title="J.A.R.V.I.S API",
+    description="Just A Rather Very Intelligent System",
+    lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class TimingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        t0 = time.perf_counter()
+        response = await call_next(request)
+        elapsed = time.perf_counter() - t0
+        path = request.url.path
+        logger.info("[REQUEST] %s %s -> %s (%.3fs)", request.method, path, response.status_code, elapsed)
+        return response
+
+
+app.add_middleware(TimingMiddleware)
