@@ -57,3 +57,42 @@ task_executor: TaskExecutor = None
 task_manager: TaskManager = None
 vision_service: VisionService = None
 chat_service: ChatService = None
+
+def print_title():
+
+    title = """
+
+    ╔════════════════════════════════════════════════════╗
+    ║                                                    ║
+    ║       ██╗ █████╗ ██████╗ ██╗   ██╗██╗███████╗      ║
+    ║       ██║██╔══██╗██╔══██╗██║   ██║██║██╔════╝      ║
+    ║       ██║███████║██████╔╝██║   ██║██║███████╗      ║
+    ║  ██   ██║██╔══██║██╔══██╗╚██╗ ██╔╝██║╚════██║      ║
+    ║  ╚█████╔╝██║  ██║██║  ██║ ╚████╔╝ ██║███████║      ║
+    ║   ╚════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚═╝╚══════╝      ║
+    ║                                                    ║
+    ║       Just A Rather Very Intelligent System        ║
+    ╚════════════════════════════════════════════════════╝
+
+    """
+    print(title)
+
+
+@asynccontextmanager
+
+async def lifespan(app: FastAPI):
+
+    global vector_store_service, groq_service, realtime_service, brain_service
+    global task_executor, task_manager, vision_service, chat_service
+    print_title()
+    logger.info("=" * 60)
+    logger.info("J.A.R.V.I.S - Starting Up...")
+    logger.info("=" * 60)
+    logger.info("[CONFIG] Assistant name: %s", ASSISTANT_NAME)
+    logger.info("[CONFIG] Groq model: %s", GROQ_MODEL)
+    logger.info("[CONFIG] Groq API keys loaded: %d", len(GROQ_API_KEYS))
+    logger.info("[CONFIG] Tavily API key: %s", "configured" if TAVILY_API_KEY else "NOT SET")
+    logger.info("[CONFIG] Image generation: Pollinations.ai (free, no API key)")
+    logger.info("[CONFIG] Embedding model: %s", EMBEDDING_MODEL)
+    logger.info("[CONFIG] Chunk size: %d | Overlap: %d | Max history turns: %d",
+                CHUNK_SIZE, CHUNK_OVERLAP, MAX_CHAT_HISTORY_TURNS)
