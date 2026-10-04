@@ -266,3 +266,44 @@ async def chat(request: ChatRequest):
 
         logger.error("[API /chat] Error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
+
+    _SPLIT_RE = re.compile(r"(?<=[.!?,;:])\s+")
+_MIN_WORDS_FIRST = 1
+_MIN_WORDS = 1
+_MERGE_IF_WORDS = 2
+_TTS_BUFFER_TIMEOUT = 2.0
+_TTS_BUFFER_MIN_WORDS = 4
+_ABBREV_HOLD_RE = re.compile(r"^(?:Dr|Mr|Mrs|Ms|Prof|Sr|Jr|St|Vs|Etc)\.$", re.IGNORECASE)
+
+
+def _should_hold_sentence_for_continuation(sent: str) -> bool:
+
+    t = sent.strip()
+
+    if not t.endswith(","):
+        return False
+
+    words = t.split()
+
+    if len(words) != 1:
+        return False
+
+    return bool(_ABBREV_HOLD_RE.match(words[0]))
+
+
+def _split_sentences(buf: str):
+    parts = _SPLIT_RE.split(buf)
+
+    if len(parts) <= 1:
+        return [], buf
+
+    raw = [p.strip() for p in parts[:-1] if p.strip()]
+    sentences, pending = [], ""
+
+    for s in raw:
+
+        if pending:
+            s = (pending + " " + s).strip()
+            pending = ""
+
+        min_req = _MIN_WORDS_FIRST if not sentences else _MIN_WORDS
