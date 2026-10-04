@@ -166,7 +166,6 @@ async def lifespan(app: FastAPI):
         logger.error(f"Fatal error during startup: {e}", exc_info=True)
         raise
 
-
 app = FastAPI(
     title="J.A.R.V.I.S API",
     description="Just A Rather Very Intelligent System",
@@ -184,7 +183,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 class TimingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         t0 = time.perf_counter()
@@ -194,5 +192,5 @@ class TimingMiddleware(BaseHTTPMiddleware):
         logger.info("[REQUEST] %s %s -> %s (%.3fs)", request.method, path, response.status_code, elapsed)
         return response
 
-
 app.add_middleware(TimingMiddleware)
+
