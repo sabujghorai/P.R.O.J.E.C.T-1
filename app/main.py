@@ -305,3 +305,31 @@ def _split_sentences(buf: str):
             pending = ""
 
         min_req = _MIN_WORDS_FIRST if not sentences else _MIN_WORDS
+
+        if len(s.split()) < min_req:
+            pending = s
+            continue
+        sentences.append(s)
+
+    remaining = (pending + " " + parts[-1].strip()).strip() if pending else parts[-1].strip()
+    return sentences, remaining
+
+def _merge_short(sentences):
+
+    if not sentences:
+        return []
+
+    merged, i = [], 0
+
+    while i < len(sentences):
+        cur = sentences[i]
+        j = i + 1
+
+        while j < len(sentences) and len(sentences[j].split()) <= _MERGE_IF_WORDS:
+            cur = (cur + " " + sentences[j]).strip()
+            j += 1
+
+        merged.append(cur)
+        i = j
+
+    return merged
