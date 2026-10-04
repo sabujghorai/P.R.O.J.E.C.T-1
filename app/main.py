@@ -23,11 +23,9 @@ RATE_LIMIT_MESSAGE = (
     "Please try again later."
 )
 
-
 def is_rate_limit_error(exc: Exception) -> bool:
     msg = str(exc).lower()
     return "429" in str(exc) or "rate limit" in msg or "tokens per day" in msg
-
 
 from app.services.vector_store import VectorStoreService
 from app.services.groq_service import GroqService, AllGroqApisFailedError
@@ -40,4 +38,22 @@ from app.services.task_manager import TaskManager
 
 from config import (
     VECTOR_STORE_DIR,GROQ_API_KEYS,GROQ_MODEL,TAVILY_API_KEY,
+    EMBEDDING_MODEL,CHUNK_SIZE,CHUNK_OVERLAP,MAX_CHAT_HISTORY,MAX_CHAT_HISTORY_TURNS,
+    ASSISTANT_NAME,TTS_VOICE,TTS_RATE,
 )
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)-8s | %(name)-20s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+logger = logging.getLogger("J.A.R.V.I.S")
+vector_store_service: VectorStoreService = None
+groq_service: GroqService = None
+realtime_service: RealtimeGroqService = None
+brain_service: BrainService = None
+task_executor: TaskExecutor = None
+task_manager: TaskManager = None
+vision_service: VisionService = None
+chat_service: ChatService = None
