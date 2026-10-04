@@ -194,3 +194,75 @@ class TimingMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(TimingMiddleware)
 
+@app.get("/api")
+async def api_info():
+    return {
+        "message": "J.A.R.V.I.S API",
+        "endpoints": {
+            "/chat": "General chat (non-streaming)",
+            "/chat/stream": "General chat (streaming chunks)",
+            "/chat/realtime": "Realtime chat (non-streaming)",
+            "/chat/realtime/stream": "Realtime chat (streaming chunks)",
+            "/chat/jarvis/stream": "Jarvis unified route (two-stage brain: classify -> route -> execute/stream)",
+            "/chat/history/{session_id}": "Get chat history",
+            "/tasks/{task_id}": "Get background task status and result",
+            "/health": "System health check",
+            "/tts": "Text-to-speech (POST text, returns streamed MP3)"
+        }
+    }
+
+
+@app.get("/health")
+
+async def health():
+
+    try:
+        return {
+            "status": "healthy",
+            "vector_store": vector_store_service is not None,
+            "groq_service": groq_service is not None,
+            "realtime_service": realtime_service is not None,
+            "brain_service": brain_service is not None,
+            "task_executor": task_executor is not None,
+            "task_manager": task_manager is not None,
+            "vision_service": vision_service is not None,
+            "chat_service": chat_service is not None
+        }
+
+    except Exception as e:
+        logger.warning("[API /health] Error: %s", e)
+        return {"status": "degraded", "error": str(e)}
+
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+
+    if not chat_service:
+        raise HTTPException(status_code=503, detail="Chat service not initialized")
+
+    logger.info("[API /chat] Incoming | session_id=%s | message_len=%d | message=%.100s",
+                request.session_id or "new", len(request.message), request.message)
+
+    try:
+        session_id = chat_service.get_or_create_session(request.session_id)
+        response_text = chat_service.process_message(session_id, request.message)
+        chat_service.save_chat_session(session_id)
+        logger.info("[API /chat] Done | session_id=%s | response_len=%d", session_id[:12], len(response_text))
+        return ChatResponse(response=response_text, session_id=session_id)
+
+    except ValueError as e:
+        logger.warning("[API /chat] Invalid session_id: %s", e)
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except AllGroqApisFailedError as e:
+        logger.error("[API /chat] All Groq APIs failed: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
+
+    except Exception as e:
+
+        if is_rate_limit_error(e):
+            logger.warning("[API /chat] Rate limit hit: %s", e)
+            raise HTTPException(status_code=429, detail=RATE_LIMIT_MESSAGE)
+
+        logger.error("[API /chat] Error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
