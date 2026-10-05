@@ -460,4 +460,29 @@ def _stream_generator(session_id: str, chunk_iter, is_realtime: bool, tts_enable
                         held = None
                         is_first = False
 
-                    
+                    _submit(buffer.strip())
+                    buffer = ""
+                    is_first = False
+
+            yield from _yield_completed_audio()
+
+    except Exception as e:
+
+        for fut, _ in audio_queue:
+            fut_cancel()
+
+        yield f"data: {json.dumps({'chunk': '', 'done': True, 'error': str(e)})}\n\n"
+        return
+
+    if tts_enabled:
+        remaining = buffer.strip()
+
+        if held:
+
+            if remaining and len(remaining.split()) <= _MERGE_IF_WORDS:
+                _submit((held + " " + remaining).strip())
+
+            else:
+                _submit
+
+        
