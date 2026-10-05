@@ -483,6 +483,8 @@ def _stream_generator(session_id: str, chunk_iter, is_realtime: bool, tts_enable
                 _submit((held + " " + remaining).strip())
 
             else:
-                _submit
+                _submit(held)
+                if remaining:
+                    _submit(remaining)
 
         
