@@ -489,3 +489,8 @@ def _stream_generator(session_id: str, chunk_iter, is_realtime: bool, tts_enable
 
         elif remaining:
             _submit(remaining)
+
+        # for fut, sent in audio_queue:
+
+        #     try:
+        #         audio  = fut.result(timeout=15)
