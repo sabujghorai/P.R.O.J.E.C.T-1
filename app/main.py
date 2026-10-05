@@ -381,3 +381,83 @@ def _stream_generator(session_id: str, chunk_iter, is_realtime: bool, tts_enable
             except Exception as exc:
                 logger.warning("[TTS-INLINE] Failed for '%s : %s", sent[:40], exc)
         return event
+
+    def _yield_completed_audio():
+
+        if not tts_enabled:
+            return
+
+        for ev in _drain_ready():
+            yield ev
+
+    try:
+
+        for chunk in chunk_iter:
+
+            if isinstance(chunk, dict) and "_activity" in chunk:
+                yield f"data: {json.dumps({'activity': chunk['_activity']})}\n\n"
+                yield from _yield_completed_audio()
+                continue
+
+            if isinstance(chunk, dict) and "_search_results" in chunk:
+                yield f"data: {json.dumps({'_search_results': chunk['_search_results']})}\n\n"
+                yield from _yield_completed_audio()
+                continue
+
+            if isinstance(chunk, dict) and "_actions" in chunk:
+                yield f"data: {json.dumps({'_actions': chunk['_actions']})}\n\n"
+                yield from _yield_completed_audio()
+                continue
+
+            if isinstance(chunk, dict) and "_background_tasks" in chunk:
+                yield f"data: {json.dumps({'_background_tasks': chunk['_background_tasks']})}\n\n"
+                yield from _yield_completed_audio()
+                continue
+
+            if not chunk:
+                yield from _yield_completed_audio()
+                continue
+
+            yield f"data: {json.dumps({'chunk': chunk, 'done': False})}\n\n"
+
+            if not tts_enabled:
+                continue
+
+            yield from _yield_completed_audio()
+
+            buffer += chunk
+            sentences, buffer = _split_sentences(buffer)
+            sentences = _merge_short(sentences)
+
+            if held and sentences and len(sentences[0].split()) <= _MERGE_IF_WORDS:
+                held = (held + " " + sentences[0]).strip()
+                sentences = sentences[1:]
+
+            for i, sent in enumerate(sentences):
+                min_w = _MIN_WORDS_FIRST if is_first else _MIN_WORDS
+                if len(sent.split()) < min_w:
+                    continue
+
+                is_last = (i == len(sentences) - 1)
+
+                if held:
+                    _submit(held)
+                    held = None
+                    is_first = False
+
+                if is_last and _should_hold_sentence_for_continuation(sent):
+                    held = sent
+
+                else:
+                    _submit(sent)
+                    is_first = False
+
+            if buffer and len(buffer.split()) >= _TTS_BUFFER_MIN_WORDS:
+                if time.perf_counter() - last_submit_time > _TTS_BUFFER_TIMEOUT:
+
+                    if held:
+                        _submit(held)
+                        held = None
+                        is_first = False
+
+                    
