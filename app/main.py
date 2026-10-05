@@ -487,4 +487,5 @@ def _stream_generator(session_id: str, chunk_iter, is_realtime: bool, tts_enable
                 if remaining:
                     _submit(remaining)
 
-        
+        elif remaining:
+            _submit(remaining)
