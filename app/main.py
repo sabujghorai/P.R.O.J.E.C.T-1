@@ -332,5 +332,4 @@ def _merge_short(sentences):
 
         merged.append(cur)
         i = j
-
     return merged
