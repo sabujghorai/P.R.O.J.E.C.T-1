@@ -356,3 +356,10 @@ def _stream_generator(session_id: str, chunk_iter, is_realtime: bool, tts_enable
     held = None
     is_first = True
     audio_queue = []
+    last_submit_time = time.perf_counter()
+
+    def _submit(text):
+        nonlocal last_submit_time
+
+        if not text or not text.strip():
+            return
