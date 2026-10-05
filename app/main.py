@@ -339,3 +339,11 @@ def _generate_tts_sync(text: str, voice: str, rate: str) -> bytes:
     async def _inner():
         communicate = edge_tts.communicate(text=text, voice=voice, rate=rate)
         parts = []
+
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                parts.append(chunk["data"])
+
+        return b"".join(parts)
+
+    return asyncio.run(_inner())
