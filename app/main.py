@@ -49,6 +49,7 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("J.A.R.V.I.S")
+_tts_pool = ThreadPoolExecutor(max_workers=4)
 vector_store_service: VectorStoreService = None
 groq_service: GroqService = None
 realtime_service: RealtimeGroqService = None
@@ -267,7 +268,7 @@ async def chat(request: ChatRequest):
         logger.error("[API /chat] Error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
 
-    _SPLIT_RE = re.compile(r"(?<=[.!?,;:])\s+")
+_SPLIT_RE = re.compile(r"(?<=[.!?,;:])\s+")
 _MIN_WORDS_FIRST = 1
 _MIN_WORDS = 1
 _MERGE_IF_WORDS = 2
