@@ -347,3 +347,12 @@ def _generate_tts_sync(text: str, voice: str, rate: str) -> bytes:
         return b"".join(parts)
 
     return asyncio.run(_inner())
+
+__tts_pool = ThreadPoolExecutor(max_workers=4)
+
+def _stream_generator(session_id: str, chunk_iter, is_realtime: bool, tts_enabled: bool = False):
+    yield f"data: {json.dumps({'session_id': session_id, 'chunk': '', 'done': False})}\n\n"
+    buffer = ""
+    held = None
+    is_first = True
+    audio_queue = []
