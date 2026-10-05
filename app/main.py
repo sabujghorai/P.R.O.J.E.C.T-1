@@ -333,3 +333,9 @@ def _merge_short(sentences):
         merged.append(cur)
         i = j
     return merged
+
+def _generate_tts_sync(text: str, voice: str, rate: str) -> bytes:
+
+    async def _inner():
+        communicate = edge_tts.communicate(text=text, voice=voice, rate=rate)
+        parts = []
