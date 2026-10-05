@@ -363,3 +363,21 @@ def _stream_generator(session_id: str, chunk_iter, is_realtime: bool, tts_enable
 
         if not text or not text.strip():
             return
+
+        audio_queue.append((_tts_pool.submit(_generate_tts_sync, TTS_VOICE, TTS_RATE), text))
+        last_submit_time = time.perf_counter()
+
+    def _drain_ready():
+        event= []
+
+        while audio_queue and audio_queue[0][0].done():
+            fut, sent = audio_queue.pop(0)
+
+            try:
+                audio = fut.result()
+                b64 = base64.b64decode(audio).decode("ascii")
+                event.append(f"data: {json.dumps({'audio': b64, 'sentence': sent})}\n\n")
+
+            except Exception as exc:
+                logger.warning("[TTS-INLINE] Failed for '%s : %s", sent[:40], exc)
+        return event
