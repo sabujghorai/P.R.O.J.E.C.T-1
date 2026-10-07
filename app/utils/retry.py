@@ -50,5 +50,4 @@ def with_retry(
             )
             time.sleep(delay)
             delay *= 2 # Exponential backoff: 1s, 2s. 4s, ....
-
     raise last_exception
