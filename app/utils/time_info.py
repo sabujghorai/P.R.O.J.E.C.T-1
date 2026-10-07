@@ -9,7 +9,6 @@ and similar queations. Called by both GroqService and RealtimeGroqService.
 
 import datetime
 
-
 def get_time_information() -> str:
     """Returna. few lines of text: day name, date, month, year and time (24h)."""
     now = datetime.datetime.now()
