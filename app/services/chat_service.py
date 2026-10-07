@@ -228,4 +228,3 @@ def save_chat_session(self, session_id: str):
             json.dump(chat_dict, f, indent=2, ensure_ascii=False)
     except Exception as e:
         logger.error("Failed to save chat session %s to disk: %s", session_id,e)
-        
