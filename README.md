@@ -222,7 +222,6 @@ Run `edge-tts --list-voices` to see all available TTS voices.
 | LangChain | LLM orchestration |
 | WebGL / GLSL | Animated orb in the UI |
 
----
 
 ## Developer
 
