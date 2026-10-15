@@ -78,3 +78,23 @@ def _mask_api_key(key: str) -> str:
     if not key or len(key) <= 12:
         return "***maksed***"
     return f"{key[:8]}...{key[-4:]}"
+
+
+
+# GROQ SERVICE CLASS
+
+
+class GroqService:
+    """
+    General chat: retrieves context from the vector store and calls the Groq LLM.
+    Supports multiple API keys: each request uses the next key in rotation (one-by-one),
+    and if that key fails, the server tries the next key until one succeeds or all fail.
+
+    ROUND-ROBIN BEHAVIOR:
+    - Request 1 uses key 0 ( first key)
+    - Request 2 uses key 1 ( second key)
+    - Request 3 uses key 2 ( third key)
+    - After all keys are used, cycles back to key 0
+    - If a key fails (rate limit error), tries the next key in sequence
+    - All request share the saem round-robin counter (class-level)
+    """
