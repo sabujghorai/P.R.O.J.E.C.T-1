@@ -64,6 +64,17 @@ def escape_curly_braces(text: str) -> str:
 def _is_rate_limit_error(exc: BaseException) -> bool:
     """
     Return True if the exception indicates a Groq rate limit (e.g. 429, tokens per day).
-    Used for logging; actual fallback tries
-    
+    Used for logging; actual fallback tries the next key on any failure when multiple keys exist.
     """
+    msg = str(exc).lower()
+    return "429" in str(exc) or "rate limit" in msg or "tokens per day" in msg
+
+
+def _mask_api_key(key: str) -> str:
+    """
+    Mask an API key for safe logging. Show first 8 and last 4 characters, maskd the middle.
+    Example: gsk_1234567890abcdef -> gsk_1234...cdef
+    """
+    if not key or len(key) <= 12:
+        return "***maksed***"
+    return f"{key[:8]}...{key[-4:]}"
