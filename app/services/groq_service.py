@@ -50,3 +50,20 @@ logger = logging.getLogger("J.A.R.V.I.S")
 # Langchain prompt templates use {variable_name}. If learning data or chat
 # content contains { or }, the template engine can break, Doubling them 
 # makes them literal int he final string.
+
+def escape_curly_braces(text: str) -> str:
+    """
+    Double every { and } so Langchain does not treat them as template variables.
+    Learning data or chat content might contain { or }; without escaping, invoke() can fail.
+    """
+    if not text:
+        return text
+    return text.replace("{", "{{").replace("}", "}}")
+
+
+def _is_rate_limit_error(exc: BaseException) -> bool:
+    """
+    Return True if the exception indicates a Groq rate limit (e.g. 429, tokens per day).
+    Used for logging; actual fallback tries
+    
+    """
