@@ -40,3 +40,13 @@ import logging
 from config import GROQ_API_KEY, GROQ_MODEL, JARVIS_SYSTEM_PROMPT
 from app.services.vector_store import VectorStoreService
 from app.utils.time_info import get_time_information
+
+logger = logging.getLogger("J.A.R.V.I.S")
+
+
+
+# HELPER: ESCAPE CURLY BRACES FOR LANGCHAIN
+
+# Langchain prompt templates use {variable_name}. If learning data or chat
+# content contains { or }, the template engine can break, Doubling them 
+# makes them literal int he final string.
