@@ -98,3 +98,7 @@ class GroqService:
     - If a key fails (rate limit error), tries the next key in sequence
     - All request share the saem round-robin counter (class-level)
     """
+
+    # class-level counter shared across all instances (GroqService and RealtimeGroqService)
+    # This ensure eound-robin workd across both /chat and /chat/realtime endpoints
+    _shared_key_index = 0
