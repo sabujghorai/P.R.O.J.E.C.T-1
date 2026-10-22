@@ -102,3 +102,4 @@ class GroqService:
     # class-level counter shared across all instances (GroqService and RealtimeGroqService)
     # This ensure eound-robin workd across both /chat and /chat/realtime endpoints
     _shared_key_index = 0
+    
