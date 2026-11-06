@@ -10,7 +10,6 @@ def check_conflict(block_start, block_end, train_times):
     """
     Check whether any train passes during the maintenance block.
     """
-
     start = time_to_minutes(block_start)
     end = time_to_minutes(block_end)
 
