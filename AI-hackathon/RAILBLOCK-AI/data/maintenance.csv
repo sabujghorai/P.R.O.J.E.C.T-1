@@ -1,6 +1,0 @@
-id,section,work,duration,priority
-M001,SDAH-BWN,Track Repair,3,High
-M002,BWN-KNJ,Sleeper Replacement,2,Medium
-M003,KNJ-CPLE,Track Inspection,1,Low
-M004,CPLE-RHA,Signal Maintenance,2,High
-M005,RHA-AZ,Track Repair,4,Critical
